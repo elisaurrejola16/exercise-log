@@ -291,11 +291,12 @@ const fmtD=(s,o)=>new Intl.DateTimeFormat(loc(),o).format(dt(s));
 const KGLB=2.20462262, INCM=2.54;
 const r1=v=>Math.round(v*10)/10;
 const wToD=kg=>kg==null?null:r1(state.wu==='kg'?kg:kg*KGLB);
-const wDisp=kg=>kg==null?'':String(wToD(kg));
+const dec=x=>state.lang==='es'?String(x).replace('.',','):String(x);
+const wDisp=kg=>kg==null?'':dec(wToD(kg));
 const wIn=s=>{const v=parseFloat(String(s).replace(',','.'));if(!isFinite(v))return null;return state.wu==='kg'?v:v/KGLB;};
 const nf=()=>new Intl.NumberFormat(loc(),{maximumFractionDigits:1});
 const wFmt=kg=>nf().format(wToD(kg))+' '+state.wu;
-const hDisp=cm=>String(r1(state.hu==='cm'?cm:cm/INCM));
+const hDisp=cm=>dec(r1(state.hu==='cm'?cm:cm/INCM));
 const hIn=s=>{const v=parseFloat(String(s).replace(',','.'));if(!isFinite(v))return null;return state.hu==='cm'?v:v*INCM;};
 const allEx=()=>EX.concat(state.custom);
 const meta=id=>EXMAP[id]||state.custom.find(c=>c.id===id)||null;
@@ -423,13 +424,13 @@ function exCard(item,d){
   const last=prev?('<p class="small muted">'+esc(t('lastL'))+' ('+esc(fmtD(prev.date,{day:'numeric',month:'short'}))+'): '+esc(setsLine(prev.item,m))+'</p>'):'<p class="small muted">'+esc(t('noLast'))+'</p>';
   const nw=!!m.noW;
   const rows=item.sets.map((s,i)=>{
-    const wIn_='<input type="number" inputmode="decimal" step="0.1" min="0" id="w-'+m.id+'-'+i+'" data-k="w" data-ex="'+m.id+'" data-i="'+i+'" value="'+esc(wDisp(s.w))+'" aria-label="'+esc(t('weight')+' '+(i+1))+'">';
+    const wIn_='<input type="text" inputmode="decimal" autocomplete="off" id="w-'+m.id+'-'+i+'" data-k="w" data-ex="'+m.id+'" data-i="'+i+'" value="'+esc(wDisp(s.w))+'" aria-label="'+esc(t('weight')+' '+(i+1))+'">';
     const rIn='<input type="number" inputmode="numeric" step="1" min="0" id="r-'+m.id+'-'+i+'" data-k="r" data-ex="'+m.id+'" data-i="'+i+'" value="'+(s.r==null?'':s.r)+'" aria-label="'+esc((nw?t('secs'):t('reps'))+' '+(i+1))+'">';
     return '<div class="setrow'+(nw?' nw':'')+'"><span class="n">'+(i+1)+'</span>'+(nw?'':wIn_)+rIn+'<button type="button" class="icon-btn" data-act="rmset" data-ex="'+m.id+'" data-i="'+i+'" aria-label="'+esc(t('remove'))+'">&times;</button></div>';
   }).join('');
   const head='<div class="colh'+(nw?' nw':'')+'"><span></span>'+(nw?'':'<span>'+esc(t('weight'))+' ('+state.wu+')</span>')+'<span>'+esc(nw?t('secs'):(m.side?t('perSide'):t('reps')))+'</span><span></span></div>';
   const eff=['easy','ok','hard'].map(k=>'<button type="button" data-act="effort" data-ex="'+m.id+'" data-v="'+k+'" aria-pressed="'+(item.effort===k)+'">'+esc(t(k))+'</button>').join('');
-  const step=nw?'':'<label class="f" for="inc-'+m.id+'">'+esc(t('stepL'))+' ('+state.wu+')<input type="number" inputmode="decimal" step="0.1" min="0" id="inc-'+m.id+'" data-k="inc" data-ex="'+m.id+'" value="'+esc(wDisp(stepKg(m.id)))+'"></label>';
+  const step=nw?'':'<label class="f" for="inc-'+m.id+'">'+esc(t('stepL'))+' ('+state.wu+')<input type="text" inputmode="decimal" autocomplete="off" id="inc-'+m.id+'" data-k="inc" data-ex="'+m.id+'" value="'+esc(wDisp(stepKg(m.id)))+'"></label>';
   const cues=(m.c&&m.c[state.lang])?'<details><summary>'+esc(t('howTo'))+'</summary><ul class="small">'+m.c[state.lang].map(c=>'<li>'+esc(c)+'</li>').join('')+'</ul></details>':'';
   return '<article class="card ex" data-card="'+m.id+'">'+
     '<div class="exh"><div class="dgbox">'+svg(m.id)+'</div><div class="grow stack" style="gap:4px"><h3>'+esc(nm(m))+'</h3>'+(m.custom?'':'<p class="small muted">'+esc(m.m[state.lang])+'</p>')+
@@ -576,8 +577,8 @@ function viewSettings(){
     '<div class="row"><span class="grow" style="font-weight:600">'+esc(t('langL'))+'</span><div class="seg"><button type="button" data-act="lang" data-v="es" aria-pressed="'+(state.lang==='es')+'">Español</button><button type="button" data-act="lang" data-v="en" aria-pressed="'+(state.lang==='en')+'">English</button></div></div>'+
     '<div class="row"><span class="grow" style="font-weight:600">'+esc(t('unitW'))+'</span><div class="seg"><button type="button" data-act="wu" data-v="kg" aria-pressed="'+(state.wu==='kg')+'">kg</button><button type="button" data-act="wu" data-v="lb" aria-pressed="'+(state.wu==='lb')+'">lb</button></div></div>'+
     '<div class="row"><span class="grow" style="font-weight:600">'+esc(t('unitH'))+'</span><div class="seg"><button type="button" data-act="hu" data-v="cm" aria-pressed="'+(state.hu==='cm')+'">cm</button><button type="button" data-act="hu" data-v="in" aria-pressed="'+(state.hu==='in')+'">in</button></div></div>'+
-    '<div class="grid2"><label class="f" for="bw">'+esc(t('bodyW'))+' ('+state.wu+')<input type="number" inputmode="decimal" step="0.1" id="bw" data-k="bw" value="'+esc(wDisp(state.bodyKg))+'"></label>'+
-    '<label class="f" for="ht">'+esc(t('heightL'))+' ('+state.hu+')<input type="number" inputmode="decimal" step="0.1" id="ht" data-k="ht" value="'+esc(hDisp(state.heightCm))+'"></label></div>'+
+    '<div class="grid2"><label class="f" for="bw">'+esc(t('bodyW'))+' ('+state.wu+')<input type="text" inputmode="decimal" autocomplete="off" id="bw" data-k="bw" value="'+esc(wDisp(state.bodyKg))+'"></label>'+
+    '<label class="f" for="ht">'+esc(t('heightL'))+' ('+state.hu+')<input type="text" inputmode="decimal" autocomplete="off" id="ht" data-k="ht" value="'+esc(hDisp(state.heightCm))+'"></label></div>'+
     '<p class="small muted" id="bmi">'+bmiText()+'</p></div>';
   h+='<h2 style="margin-top:8px">'+esc(t('schedH'))+'</h2><div class="card stack">'+order.map((wd,i)=>{
     const lab=new Intl.DateTimeFormat(loc(),{weekday:'long'}).format(dt(addDays(monday,i)));
